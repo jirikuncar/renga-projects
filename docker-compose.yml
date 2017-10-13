@@ -1,0 +1,70 @@
+version: '3'
+
+volumes:
+  cassandra-data: {}
+
+services:
+  mq:
+    image: rabbitmq:3-management-alpine
+    restart: always
+    ports:
+      - 15672:15672
+      - 5672:5672
+
+  cassandra:
+    image: cassandra:2.1.9
+    volumes:
+    - ./services/cassandra/etc/cassandra-env.sh:/etc/cassandra/cassandra-env.sh:ro
+    - cassandra-data:/var/lib/cassandra
+    ports:
+    - 9160
+
+  elasticsearch:
+    image: elasticsearch:1.5
+    ports:
+      - 9300:9300
+
+  graph:
+    build: services/graph
+    ports:
+      - 8182:8182
+    depends_on:
+      - cassandra
+      - elasticsearch
+
+  renga-projects:
+    build: .
+    environment:
+      RENGA_MQ_URL: amqp://guest:guest@mq/
+      RENGA_GRAPH_URL: ws://graph:8182/gremlin
+    ports:
+      - 8080
+    depends_on:
+      - mq
+      - graph
+    links:
+      - reverse-proxy
+      - mq
+      - graph
+    labels:
+      traefik.enable: "true"
+      traefik.frontend.priority: "20"
+      traefik.frontend.rule: PathPrefixStrip:/api/projects
+    volumes:
+      - .:/code/:ro
+    restart: on-failure
+
+  reverse-proxy:
+    image: traefik
+    command: --web --web.address=:81 \
+      --docker --docker.watch --docker.domain=localhost \
+      --debug --logLevel=DEBUG \
+      --defaultentrypoints=http \
+      --entrypoints='Name:http Address::80' \
+      --docker.exposedbydefault=false
+    ports:
+      - 80:80
+      - 81:81
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /dev/null:/traefik.toml
