@@ -34,6 +34,8 @@ __all__ = ('__version__', 'app')
 
 RENGA_MQ_URL = os.environ.get('RENGA_MQ_URL', 'amqp://guest:guest@localhost/')
 RENGA_MQ_CMD_ROUTING = os.environ.get('RENGA_MQ_CMD_ROUTING', 'renga-commands')
+RENGA_MQ_EVENTS_ROUTING = os.environ.get('RENGA_MQ_EVENTS_ROUTING',
+                                         'renga-events')
 RENGA_GRAPH_URL = os.environ.get('RENGA_GRAPH_URL',
                                  'ws://localhost:8182/gremlin')
 
@@ -41,13 +43,13 @@ RENGA_GRAPH_URL = os.environ.get('RENGA_GRAPH_URL',
 async def index(request):
     """Return all available projects."""
     g = request.app['g']
+    data = g.V().hasLabel('project:project').valueMap('id', 'name').toList()
     # data = g.V().has('type', 'project:project').toList()
-    data = [v.__dict__ for v in g.V()]
+    # data = [v.__dict__ for v in g.V()]
     return web.json_response(
         {
             'projects': data,
-        },
-        status=200)
+        }, status=200)
 
 
 async def create(request):
@@ -83,7 +85,13 @@ async def create(request):
 async def view(request):
     """Return information about a project."""
     g = request.app['g']
-    return web.json_response(g.V().has("type", "project:project")[0])
+    project = g.V().hasLabel('project:project').has(
+        'id', request.match_info['project_id']).valueMap('id', 'name').next()
+    print(project)
+    return web.json_response({
+        'identifier': project['id'],
+        'name': project['name'],
+    })
 
 
 def setup_routes(app):
@@ -99,7 +107,6 @@ async def on_startup(app):
         RENGA_MQ_URL, loop=app.loop)
     app['channel'] = channel = await connection.channel()
     app['api'] = channel.default_exchange
-
 
     from gremlin_python.structure.graph import Graph
     from gremlin_python.driver.driver_remote_connection import \
