@@ -32,6 +32,22 @@ services:
       - cassandra
       - elasticsearch
 
+  renga-projects-worker:
+    build: .
+    command: python3 -m renga_projects.worker
+    environment:
+      RENGA_MQ_URL: amqp://guest:guest@mq/
+      RENGA_GRAPH_URL: ws://graph:8182/gremlin
+    depends_on:
+      - mq
+      - graph
+    links:
+      - mq
+      - graph
+    volumes:
+      - .:/code/:ro
+    restart: on-failure
+
   renga-projects:
     build: .
     environment:

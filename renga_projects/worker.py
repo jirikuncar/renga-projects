@@ -16,17 +16,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implement worker for storing projects in knowledge graph."""
-import os
-import json
-
 import asyncio
+import json
+import os
+
 import aio_pika
-
+from gremlin_python.driver.driver_remote_connection import \
+    DriverRemoteConnection
 from gremlin_python.structure.graph import Graph
-from gremlin_python.driver.driver_remote_connection import DriverRemoteConnection
 
-from renga_projects import RENGA_GRAPH_URL, RENGA_MQ_URL, RENGA_MQ_CMD_ROUTING, \
-    RENGA_MQ_EVENTS_ROUTING
+from .config import RENGA_GRAPH_URL, RENGA_MQ_CMD_ROUTING, \
+    RENGA_MQ_EVENTS_ROUTING, RENGA_MQ_URL
 
 
 async def main(loop):

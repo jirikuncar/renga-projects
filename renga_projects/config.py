@@ -15,14 +15,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Service to manage project interactions with the Renga platform."""
 
-# TODO: This is an example file. Remove it if your package does not use any
-# extra configuration variables.
+import os
 
-RENGA_PROJECTS_DEFAULT_VALUE = 'foobar'
-"""Default value for the application."""
+RENGA_MQ_URL = os.environ.get('RENGA_MQ_URL', 'amqp://guest:guest@localhost/')
+"""Define AMQP endpoint url."""
 
-RENGA_PROJECTS_BASE_TEMPLATE = 'renga_projects/base.html'
-"""Default base template for the demo page."""
+RENGA_MQ_CMD_ROUTING = os.environ.get('RENGA_MQ_CMD_ROUTING', 'renga-commands')
+"""Define name of command queue."""
+
+RENGA_MQ_EVENTS_ROUTING = os.environ.get('RENGA_MQ_EVENTS_ROUTING',
+                                         'renga-events')
+"""Define name of event queue."""
+
+RENGA_GRAPH_URL = os.environ.get('RENGA_GRAPH_URL',
+                                 'ws://localhost:8182/gremlin')
+"""Define Gremlin endpoint url."""
