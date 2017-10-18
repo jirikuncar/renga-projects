@@ -73,7 +73,9 @@ async def view(request):
     project = await session.traversal(Project).has(
         Project.identifier, request.match_info['project_id']).next()
     print(project)
-    return web.json_response(project.to_dict())
+    if project:
+        return web.json_response(project.to_dict())
+    raise web.HTTPNotFound()
 
 
 def setup_routes(app):

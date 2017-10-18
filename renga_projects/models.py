@@ -47,14 +47,14 @@ def parse_cluster_url(url):
     """Return mapping from cluster URL definition."""
     config = urlparse(url)
     kwargs = {}
-    for key, type_ in (('host', str), ('port', int), ('scheme', str)):
+    for key, type_ in (('hostname', str), ('port', int), ('scheme', str)):
         value = getattr(config, key, None)
         if value:
             kwargs[key] = type_(value)
 
     print(kwargs)
-    if 'host' in kwargs:
-        kwargs['hosts'] = [kwargs.pop('host')]
+    if 'hostname' in kwargs:
+        kwargs['hosts'] = [kwargs.pop('hostname')]
     return kwargs
 
 
