@@ -25,6 +25,7 @@ from aio_pika import DeliveryMode, Message, connect_robust
 from aiohttp import web
 
 from .config import RENGA_GRAPH_URL, RENGA_MQ_URL
+from .models import connect
 from .version import __version__
 from .views import setup_routes
 
@@ -35,29 +36,19 @@ from .views import setup_routes
 __all__ = ('__version__', 'app')
 
 
-
 async def on_startup(app):
     """Create a connection to message queue and open a channel."""
     app['connection'] = connection = await connect_robust(
         RENGA_MQ_URL, loop=app.loop)
     app['channel'] = channel = await connection.channel()
     app['api'] = channel.default_exchange
-
-    from gremlin_python.structure.graph import Graph
-    from gremlin_python.driver.driver_remote_connection import \
-        DriverRemoteConnection
-    from gremlin_python.process.strategies import ReadOnlyStrategy
-
-    graph = Graph()
-    app['g'] = graph.traversal().withRemote(
-        DriverRemoteConnection(RENGA_GRAPH_URL, 'g')).withStrategies(
-            ReadOnlyStrategy)
+    app['graph'] = await connect(RENGA_GRAPH_URL, loop=app.loop)
 
 
 async def on_shutdown(app):
     """Close the connection to message queue."""
     await app['connection'].close()
-    await app['g'].close()
+    await app['graph'].close()
 
 
 app = web.Application()

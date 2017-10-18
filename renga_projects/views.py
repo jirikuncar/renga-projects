@@ -24,15 +24,16 @@ from aio_pika import DeliveryMode, Message
 from aiohttp import web
 
 from .config import RENGA_MQ_CMD_ROUTING, RENGA_MQ_EVENTS_ROUTING
+from .models import Project
 
 
 async def index(request):
     """Return all available projects."""
-    g = request.app['g']
-    data = g.V().hasLabel('project:project').valueMap('id', 'name').toList()
+    session = await request.app['graph'].session()
+    projects = await session.traversal(Project).toList()
     return web.json_response(
         {
-            'projects': data,
+            'projects': projects,
         }, status=200)
 
 
@@ -46,7 +47,7 @@ async def create(request):
         'labels': data.get('labels', []),
     }
 
-    data = {
+    msg = {
         'type': 'create_project',
         'actor': {
                 'user_id': 0,
@@ -56,7 +57,7 @@ async def create(request):
 
     published = await request.app['api'].publish(
         Message(
-            json.dumps(data).encode('utf-8'),
+            json.dumps(msg).encode('utf-8'),
             content_type='application/json',
             delivery_mode=DeliveryMode.PERSISTENT),
         routing_key=RENGA_MQ_CMD_ROUTING)
@@ -68,14 +69,11 @@ async def create(request):
 
 async def view(request):
     """Return information about a project."""
-    g = request.app['g']
-    project = g.V().hasLabel('project:project').has(
-        'id', request.match_info['project_id']).valueMap('id', 'name').next()
+    session = await request.app['graph'].session()
+    project = await session.traversal(Project).has(
+        Project.identifier, request.match_info['project_id']).next()
     print(project)
-    return web.json_response({
-        'identifier': project['id'],
-        'name': project['name'],
-    })
+    return web.json_response(project.to_dict())
 
 
 def setup_routes(app):

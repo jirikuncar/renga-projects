@@ -54,7 +54,8 @@ setup_requires = [
 install_requires = [
     'aio-pika>=1.4.2',
     'aiohttp>=2.2.5',
-    'gremlinpython==3.2.3',
+    'gremlinpython==3.2.6',
+    'goblin==2.1.0rc3',
 ]
 
 packages = find_packages()

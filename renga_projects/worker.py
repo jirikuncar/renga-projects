@@ -16,17 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implement worker for storing projects in knowledge graph."""
+
 import asyncio
 import json
 import os
 
 import aio_pika
-from gremlin_python.driver.driver_remote_connection import \
-    DriverRemoteConnection
-from gremlin_python.structure.graph import Graph
 
 from .config import RENGA_GRAPH_URL, RENGA_MQ_CMD_ROUTING, \
     RENGA_MQ_EVENTS_ROUTING, RENGA_MQ_URL
+from .models import Project, connect
 
 
 async def main(loop):
@@ -40,19 +39,21 @@ async def main(loop):
     events = await channel.declare_exchange(RENGA_MQ_EVENTS_ROUTING,
                                             aio_pika.ExchangeType.FANOUT)
 
-    graph = Graph()
-    g = graph.traversal().withRemote(
-        DriverRemoteConnection(RENGA_GRAPH_URL, 'g'))
+    graph = await connect(RENGA_GRAPH_URL, loop=loop)
+    session = await graph.session()
 
     async for message in api:
         with message.process():
             print(message.body)
             data = json.loads(message.body)['payload']
 
-            project = g.addV('project:project').property(
-                'name', data['name']
-            ).property('id', data['identifier']).next()
-            print(project)
+            project = Project()
+            project.identifier = data['identifier']
+            project.name = data['name']
+            # project.labels = data.get('labels', [])
+            project = await session.save(project)
+
+            print(project.to_dict())
 
             await events.publish(
                 aio_pika.Message(
