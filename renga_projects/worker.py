@@ -45,12 +45,14 @@ async def main(loop):
     async for message in api:
         with message.process():
             print(message.body)
-            data = json.loads(message.body)['payload']
 
-            project = Project()
-            project.identifier = data['identifier']
-            project.name = data['name']
-            # project.labels = data.get('labels', [])
+            data = {'__label__': Project.__label__, '__type__': Project.__type__}
+            data.update(json.loads(message.body)['payload'])
+            project = Project.from_dict({
+                key: value
+                for key, value in data.items() if value not in (None, [])
+            })
+
             project = await session.save(project)
 
             print(project.to_dict())

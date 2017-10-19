@@ -52,7 +52,6 @@ def parse_cluster_url(url):
         if value:
             kwargs[key] = type_(value)
 
-    print(kwargs)
     if 'hostname' in kwargs:
         kwargs['hosts'] = [kwargs.pop('hostname')]
     return kwargs
