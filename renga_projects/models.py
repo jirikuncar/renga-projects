@@ -20,7 +20,6 @@
 from urllib.parse import urlparse
 
 import goblin
-
 from aiogremlin import Cluster
 from gremlin_python.process.traversal import Cardinality
 

@@ -21,10 +21,10 @@ import json
 import os
 import uuid
 
-from aio_pika import DeliveryMode, Message, connect_robust
+from aio_pika import DeliveryMode, ExchangeType, Message, connect_robust
 from aiohttp import web
 
-from .config import RENGA_GRAPH_URL, RENGA_MQ_URL
+from .config import RENGA_GRAPH_URL, RENGA_MQ_CMD_ROUTING, RENGA_MQ_URL
 from .models import connect
 from .version import __version__
 from .views import setup_routes
@@ -41,7 +41,8 @@ async def on_startup(app):
     app['connection'] = connection = await connect_robust(
         RENGA_MQ_URL, loop=app.loop)
     app['channel'] = channel = await connection.channel()
-    app['api'] = channel.default_exchange
+    app['api'] = await channel.declare_exchange(RENGA_MQ_CMD_ROUTING,
+                                                ExchangeType.TOPIC)
     app['graph'] = await connect(RENGA_GRAPH_URL, loop=app.loop)
 
 

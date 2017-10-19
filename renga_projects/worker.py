@@ -34,7 +34,10 @@ async def main(loop):
     channel = await connection.channel()
     await channel.set_qos(prefetch_count=1)
 
-    api = await channel.declare_queue(RENGA_MQ_CMD_ROUTING, durable=True)
+    api = await channel.declare_exchange(RENGA_MQ_CMD_ROUTING,
+                                         aio_pika.ExchangeType.TOPIC)
+    worker = await channel.declare_queue('renga_projects_worker', durable=True)
+    await worker.bind(api, routing_key='projects.create')
 
     events = await channel.declare_exchange(RENGA_MQ_EVENTS_ROUTING,
                                             aio_pika.ExchangeType.FANOUT)
@@ -42,11 +45,14 @@ async def main(loop):
     graph = await connect(RENGA_GRAPH_URL, loop=loop)
     session = await graph.session()
 
-    async for message in api:
+    async for message in worker:
         with message.process():
             print(message.body)
 
-            data = {'__label__': Project.__label__, '__type__': Project.__type__}
+            data = {
+                '__label__': Project.__label__,
+                '__type__': Project.__type__
+            }
             data.update(json.loads(message.body)['payload'])
             project = Project.from_dict({
                 key: value

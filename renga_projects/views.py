@@ -60,7 +60,7 @@ async def create(request):
             json.dumps(msg).encode('utf-8'),
             content_type='application/json',
             delivery_mode=DeliveryMode.PERSISTENT),
-        routing_key=RENGA_MQ_CMD_ROUTING)
+        routing_key='projects.create')
 
     if published:
         return web.json_response(project, status=201)
