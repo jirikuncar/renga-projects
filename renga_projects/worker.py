@@ -54,6 +54,7 @@ async def main(loop):
                 '__type__': Project.__type__
             }
             data.update(json.loads(message.body)['payload'])
+            # TODO try to get an existing process
             project = Project.from_dict({
                 key: value
                 for key, value in data.items() if value not in (None, [])

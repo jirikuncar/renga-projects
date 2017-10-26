@@ -31,7 +31,8 @@ class Project(goblin.Vertex):
 
     identifier = goblin.Property(goblin.String)
     name = goblin.Property(goblin.String, db_name='project:project_name')
-    labels = goblin.VertexProperty(goblin.String, card=Cardinality.list_)
+    labels = goblin.VertexProperty(
+        goblin.String, card=Cardinality.list_, db_name='annotation:label')
 
 
 def get_hashable_id(val):
